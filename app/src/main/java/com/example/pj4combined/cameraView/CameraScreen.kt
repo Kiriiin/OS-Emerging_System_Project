@@ -40,7 +40,7 @@ import kotlin.coroutines.suspendCoroutine
 
 private lateinit var bitmapBuffer: Bitmap
 
-
+private var CPU_flag = 0
 
 @Composable
 fun CameraScreen() {
@@ -105,27 +105,25 @@ fun CameraScreen() {
         //  Choose your inference time threshold
         val inferenceTimeThreshold = 500
 
-        if (detectionResults.value!!.inferenceTime > inferenceTimeThreshold) {
+
+        if ((CPU_flag == 0) && (detectionResults.value!!.inferenceTime > inferenceTimeThreshold)) {
+            CPU_flag = 1
             Log.d("CS330", "GPU too slow, switching to CPU start")
             // TODO:
             //  Create new classifier to be run on CPU with 2 threads
             val newCameraExecutor = Executors.newSingleThreadExecutor()
-
             val personClassifierCPU = PersonClassifier()
             personClassifierCPU.initialize(context, useGPU = false)
-
             personClassifierCPU.setDetectorListener(listener)
 
             // TODO:
             //  Set imageAnalyzer to use the new classifier
-
             // The analyzer can then be assigned to the instance
             imageAnalyzer.setAnalyzer(newCameraExecutor) { image ->
                 detectObjects(image, personClassifierCPU)
                 // Close the image proxy
                 image.close()
             }
-
 
             Log.d("CS330", "GPU too slow, switching to CPU done")
         }
